@@ -1,0 +1,10 @@
+#wrapper{
+	display: flex;
+}
+.day{
+	flex: 0 0 20%;
+	max-width: 20%;
+}
+.day:nth-of-type(2n){
+	background-color: lightgrey;
+}
