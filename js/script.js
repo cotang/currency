@@ -49,7 +49,7 @@ function createOneDay(obj){
   oneDay.classList.add('day');
 
   /* создаем title */
-  var currencyTitle = document.createElement('h1');
+  var currencyTitle = document.createElement('h2');
   currencyTitle.classList.add('title');
   currencyTitle.innerHTML = 'Курс валют на '+ convertDateForTitle(obj.Date);
   oneDay.appendChild(currencyTitle);
