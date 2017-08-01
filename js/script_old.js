@@ -1,37 +1,25 @@
 var wrapper = document.querySelector('#wrapper');
+var currencyDaysArr = [];
 
+getCurrencyArr(getDateArray());
 
-createFiveDays(getDateArray())
-/* создать "таблицу" из пяти дней */
-function createFiveDays(arr){
-  arr.forEach(function(item){
-    createOneDay(item)
-  }); 
+/* получаем массив объектов из json */
+function getCurrencyArr(arr){
+  arr.forEach(function(url){
+    /* вызов getJson, получение данных из json */
+    getJson("https://www.cbr-xml-daily.ru/archive/"+url+".js", function(generated){
+      var currencyDataObject = generated;
+      currencyDaysArr.push(currencyDataObject);
+    });
+  });  
 }
-
-/* создать один день из таблицы, используя данные с конкретной страницы */
-function createOneDay(url){
-  var currencyDataObject = {};
-  var oneDay = document.createElement('div');
-  oneDay.classList.add('day');
-  var oneDayList = document.createElement('ul');
-  oneDayList.classList.add('list');
-
-  /* вызов getJson, получение данных из json */
-  getJson("https://www.cbr-xml-daily.ru/archive/"+url+".js", function(generated){
-    currencyDataObject = generated;  
-    createCurrencyList(currencyDataObject, oneDayList);
-  });
-
-  oneDay.appendChild(oneDayList);
-  wrapper.appendChild(oneDay);
-}
-
+// console.log(currencyDaysArr, currencyDaysArr.length)
 
 /* получаем информацию из файла json */
+/* пришлось сделать синхронный запрос, иначе массив currencyDaysArr не заполняется */
 function getJson(url, callback){
   var req  = new XMLHttpRequest();
-  req.open("GET", url);
+  req.open("GET", url, false);
   req.addEventListener('load', function(){
     try {
       var responseJson = JSON.parse(this.responseText);
@@ -44,23 +32,51 @@ function getJson(url, callback){
   });
   req.send();
 }
-/* создаем каталог валют */
-function createCurrencyList(obj, div){  
-  // console.log(obj.Valute);
-  for (var key in obj.Valute) {
-    createCurrencyItem(obj.Valute[key], div)
-  }
+
+
+createTable(currencyDaysArr);
+
+/* создать "таблицу" из пяти дней */
+function createTable(arr){
+  arr.forEach(function(item){
+    createOneDay(item);
+  }); 
 }
+
+/* создать один день из таблицы, используя данные с конкретной страницы */
+function createOneDay(obj){  
+  var oneDay = document.createElement('div');
+  oneDay.classList.add('day');
+
+  /* создаем title */
+  var currencyTitle = document.createElement('h2');
+  currencyTitle.classList.add('title');
+  currencyTitle.innerHTML = 'Курс валют на '+ convertDateForTitle(obj.Date);
+  oneDay.appendChild(currencyTitle);
+
+  /* создаем list */
+  var oneDayList = document.createElement('ul');
+  oneDayList.classList.add('list');
+  for (var key in obj.Valute) {
+    createCurrencyItem(obj.Valute[key], oneDayList)
+  }
+  oneDay.appendChild(oneDayList);
+  wrapper.appendChild(oneDay);
+}
+
+
+
 /* создаем единицу каталога валют */
 function createCurrencyItem(item, div){
   var currencyItem = document.createElement('li');
+  currencyItem.classList.add('item');
+  currencyItem.setAttribute('data-currency', item.CharCode);
+  currencyItem.setAttribute('data-value', item.Value);
   currencyItem.innerHTML = 
-    '<div>'+item.CharCode+'</div>'+
-    '<div>'+item.Nominal+' '+item.Name+' = '+item.Value+' руб.</div>';
+    '<header>'+item.CharCode+'</header>'+
+    '<p>'+item.Nominal+' '+item.Name+' = '+item.Value+' руб.</p>';
   div.appendChild(currencyItem)
 }
-
-
 
 
 /* 
@@ -68,9 +84,10 @@ function createCurrencyItem(item, div){
 "https://www.cbr-xml-daily.ru/daily_json.js" = текущая дата+1 (18.07 - "https://www.cbr-xml-daily.ru/archive/2017-07-19.js")
 */
 
+
 /* создаем массив из дат для составления url откуда берем json */
-function getDateArray(){
-  var dayArr = [];
+function getDateArray(){ 
+  var arr = []; 
   var now = new Date();
   now.setDate(now.getDate() + 1);
 
@@ -79,16 +96,15 @@ function getDateArray(){
     var newDay = now.setDate(now.getDate() - 1);
     var d = new Date(newDay);
     if (d.getDay() != 0 && d.getDay() != 1) {    
-      dayArr.push(d);
+      arr.push(d);
     }    
   }
-  var dateForURLArr = dayArr.map(convertDate);
-  return dateForURLArr;
+  return arr.map(convertDateForURL);
 }
 
 
-/* изменение формата даты */
-function convertDate(date){
+/* изменение формата даты для url */
+function convertDateForURL(date){
   var year = date.getFullYear();
 
   var month = date.getMonth()+1;
@@ -98,4 +114,20 @@ function convertDate(date){
   if (day<10) day = '0' + day;
 
   return (year+'-'+month+'-'+day);
+}
+
+
+/* изменение формата даты для title */
+function convertDateForTitle(date){
+  var date = new Date(date);
+
+  var day = date.getDate();
+  if (day<10) day = '0' + day;
+
+  var year = date.getFullYear();
+
+  var month = date.getMonth()+1;
+  if (month<10) month = '0' + month;
+
+  return (day+'-'+month+'-'+year);
 }
