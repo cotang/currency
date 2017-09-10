@@ -89,6 +89,7 @@ datesForUrl.forEach(function(url) {
 // в конце — выводим результаты
 chain.then(() => {
   // console.log(currencyDaysArr, currencyDaysArr.length);
+  document.querySelector('.overlay').style.display = 'none';
   createTable(currencyDaysArr);
   createChecklist();
   drawDiagram(draw);
